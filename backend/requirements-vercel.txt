@@ -1,0 +1,15 @@
+# Minimal requirements for Vercel Serverless Functions
+# This excludes heavy ML libraries that won't work on Vercel
+# For full functionality with ML models, deploy backend separately
+
+fastapi==0.104.1
+uvicorn==0.24.0
+python-multipart==0.0.6
+
+# Lightweight alternatives for mock data mode
+Pillow==10.2.0
+
+# Optional: For actual ML if model files are small enough
+# tensorflow==2.16.1
+# numpy==1.26.3
+# opencv-python-headless==4.9.0.80

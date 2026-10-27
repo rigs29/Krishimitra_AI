@@ -15,9 +15,11 @@ app = FastAPI(
 )
 
 # CORS configuration (allows React frontend to connect)
+# For production, replace "*" with your actual frontend domain
+# e.g., allow_origins=["https://your-frontend.vercel.app"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, restrict to your frontend URL
+    allow_origins=["*"],  # Development: allows all; Production: restrict to frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
