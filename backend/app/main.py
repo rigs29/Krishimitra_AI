@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,11 +16,31 @@ app = FastAPI(
 )
 
 # CORS configuration (allows React frontend to connect)
-# For production, replace "*" with your actual frontend domain
-# e.g., allow_origins=["https://your-frontend.vercel.app"]
+# Get allowed origins from environment variable (comma-separated)
+# For production: set CORS_ORIGINS=https://your-frontend.vercel.app,http://localhost:5173
+# For development: default allows localhost origins
+cors_origins = os.getenv("CORS_ORIGINS", "*")
+
+# Parse comma-separated origins
+if cors_origins == "*":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = [origin.strip() for origin in cors_origins.split(",") if origin.strip()]
+
+# Always allow localhost for development
+if "*" not in allowed_origins:
+    allowed_origins.extend([
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000"
+    ])
+
+logger.info(f"CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Development: allows all; Production: restrict to frontend URL
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,7 +73,7 @@ try:
     app.include_router(market_routes.router, prefix="/api/market", tags=["Crop Market"])
     app.include_router(chat_routes.router, prefix="/api/chat", tags=["AI Advisor"])
     
-    logger.info("✅ All routes loaded successfully")
+    logger.info("All routes loaded successfully")
     
 except ImportError as e:
     logger.error(f"❌ Failed to import routes: {e}")
