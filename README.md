@@ -1,182 +1,167 @@
-<h1 align="center">🌾 Agricultural Advisory Assistant for Farmers</h1>
-# 🌾 KrishiMitra AI - Smart Farming Assistant
+# 🌾 KrishiMitra AI — Smart Farming Assistant
 
-[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18.2-blue.svg)](https://reactjs.org/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.16-orange.svg)](https://tensorflow.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Kaggle](https://img.shields.io/badge/Kaggle-Dataset-20beff.svg)](https://www.kaggle.com/datasets/emmarex/plantdisease)
+**KrishiMitra AI** (Farmer's Friend) is an AI-powered agricultural assistant designed to help Indian farmers make informed farming decisions using machine learning, weather information, market prices, and conversational assistance.
 
-> **KrishiMitra AI** (Hindi: Farmer's Friend) — An intelligent farming companion for Indian farmers
+**Crop Disease Detection · Weather Forecasting · Market Prices · AI Farming Advice**
 
-**Crop Disease Detection · Weather Forecasting · Market Prices · Smart Farming Advice**
+## 🚀 Features
 
----
+- 🔬 **Crop Disease Detection:** Analyze plant-leaf images using the existing MobileNetV2 model.
+- 🌦️ **Weather Forecasting:** Access weather information to support agricultural planning.
+- 📈 **Agricultural Market Prices:** Explore commodity prices and compare available market information.
+- 🤖 **AI Farming Assistant:** Ask agricultural questions through the chatbot.
+- 📱 **Responsive Interface:** Use the application on desktop, tablet, and mobile devices.
+- 🎨 **Modern User Interface:** An improved frontend designed for a more accessible and engaging farming experience.
 
-## 📌 **Live Demo**
+## 🧠 About the Project
 
-| Component | URL |
-|-----------|-----|
-| **Frontend** | https://kashinathbiradar123.github.io/krishimitra-ai/ |
-| **Backend API** | https://krishimitra-ai-backend.onrender.com/docs |
-| **GitHub** | https://github.com/KashinathBiradar123/krishimitra-ai |
-| **Website** | https://krishimitra-ai-beta.vercel.app |
+KrishiMitra AI aims to make agricultural technology more accessible to farmers by bringing several useful capabilities into one application.
 
----
+The platform combines an AI-powered plant disease detection workflow with weather information, agricultural market insights, and farming assistance.
 
-## 🧠 **About the Project**
+## 🛠️ Technology Stack
 
-**KrishiMitra AI** is an end-to-end AI platform built to empower Indian farmers with modern technology. Farmers can:
+### Frontend
 
-- 📸 **Upload a photo** of a diseased crop leaf → Get instant AI diagnosis
-- 🌦️ **Check live weather** → Plan sowing, irrigation, and harvesting
-- 💰 **View mandi prices** → Find the best market rates
-- 🤖 **Ask farming questions** → Receive actionable advice
+- React
+- Vite
+- React Router
+- JavaScript
+- CSS
+- Axios
 
-Built with the goal of **bridging the technology gap for rural and semi-urban farmers across India**.
+### Backend
 
----
+- Python
+- FastAPI
+- Uvicorn
 
-## ✨ **Features**
+### Machine Learning
 
-| Feature | Description | Status |
-|---------|-------------|--------|
-| 🔬 **Crop Disease Detection** | Upload leaf image → MobileNetV2 model identifies disease (87% accuracy) | ✅ Complete |
-| 🌦️ **Weather Forecasting** | 7-day location-based weather with farming advice | ✅ Complete |
-| 📈 **Market (Mandi) Prices** | Live commodity prices with best price highlighting 👑 | ✅ Complete |
-| 🤖 **AI Farming Advice** | Intelligent chatbot for crop, pest, fertilizer questions | ✅ Complete |
-| 🌓 **Dark/Light Mode** | User-friendly theme toggle for day/night usage | ✅ Complete |
-| 📱 **Mobile Responsive** | Works on all devices (phone, tablet, desktop) | ✅ Complete |
+- TensorFlow / Keras
+- MobileNetV2
+- Image classification
 
----
+### Integrations
 
-## 🏗️ **Project Structure**
-<img width="700" height="730" alt="image" src="https://github.com/user-attachments/assets/9013418a-cb77-46e8-80d9-26d20192d18a" />
-<img width="640" height="890" alt="image" src="https://github.com/user-attachments/assets/6bb6ab41-130b-43a2-9b38-85eb13ab4eb1" />
-<img width="817" height="399" alt="image" src="https://github.com/user-attachments/assets/4da04e75-ca7e-4a69-812e-bc126e063fee" />
+- Weather API
+- Agricultural market data API
+- AI farming chatbot
 
----
+_The actual availability of individual integrations depends on the project's current configuration._
 
-## 🤖 **Model Details**
+## 📁 Project Structure
 
-| Parameter | Value |
-|-----------|-------|
-| **Architecture** | MobileNetV2 (Transfer Learning) |
-| **Task** | Multi-class image classification (crop leaf diseases) |
-| **Dataset** | PlantVillage Dataset (20,638 images, 15 classes) |
-| **Framework** | TensorFlow 2.16 / Keras |
-| **Input Size** | 224 x 224 pixels |
-| **Output** | Disease name + Confidence score + Treatment |
-| **Accuracy** | **87.14%** on validation set |
-| **Model Size** | 13.4 MB |
-| **Inference Time** | <2 seconds on CPU |
+```text
+Krishimitra_AI/
+├── backend/
+│   ├── app/
+│   │   └── api/
+│   └── main.py
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── App.jsx
+│   │   └── App.css
+│   ├── index.html
+│   ├── package.json
+│   └── package-lock.json
+├── run_all.bat
+├── run_backend.bat
+├── run_frontend.bat
+└── README.md
+```
 
-### **Supported Crops & Diseases**
+_This structure illustrates the main application files; additional directories and files may exist in the repository._
 
-| Crop | Diseases Detected |
-|------|-------------------|
-| **Tomato** | Bacterial spot, Early blight, Late blight, Leaf Mold, Septoria leaf spot, Spider mites, Target Spot, Yellow Leaf Curl Virus, Mosaic virus, Healthy |
-| **Potato** | Early blight, Late blight, Healthy |
-| **Pepper** | Bacterial spot, Healthy |
+## ⚙️ Prerequisites
 
----
+Install the following tools before running the project:
 
-## 🛠️ **Tech Stack**
-
-### **Backend**
-
-| Tool | Purpose |
-|------|---------|
-| **Python 3.12** | Main programming language |
-| **FastAPI** | High-performance web framework |
-| **TensorFlow/Keras** | ML model training & inference |
-| **MobileNetV2** | Pre-trained CNN architecture |
-| **OpenCV / PIL** | Image preprocessing |
-| **Uvicorn** | ASGI server |
-| **JWT** | Authentication |
-| **bcrypt** | Password hashing |
-
-### **Frontend**
-
-| Tool | Purpose |
-|------|---------|
-| **React 18** | UI framework |
-| **Vite** | Build tool (fast development) |
-| **React Router** | Navigation |
-| **Context API** | State management (dark mode, auth) |
-| **CSS3** | Custom styling with dark/light themes |
-| **Axios** | HTTP requests |
-
-### **External APIs**
-
-| API | Purpose |
-|-----|---------|
-| **OpenWeatherMap** | Weather forecasts |
-| **Kaggle** | PlantVillage dataset |
-| **Google Drive** | Pre-trained model hosting |
-
----
-
-## 🚀 **Getting Started**
-
-### **Prerequisites**
-
-- Python 3.12+
-- Node.js 18+
-- npm or yarn
+- Python compatible with the backend dependencies
+- Node.js and npm
 - Git
 
-### **Installation**
+## 💻 Getting Started
 
-#### **1. Clone the repository**
+### 1. Clone the repository
+
 ```bash
-git clone https://github.com/KashinathBiradar123/krishimitra-ai.git
-cd krishimitra-ai
+git clone https://github.com/rigs29/Krishimitra_AI.git
+cd Krishimitra_AI
+```
+
 ### 2. Set up the backend
+
+Follow the backend's dependency instructions and install the packages listed in its requirements file, if present.
+
+Start the FastAPI application using the entry point and command configured for your project.
+
+For example, if `backend/main.py` exposes the FastAPI application as `app`:
+
 ```bash
 cd backend
-pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-### 3. Download the dataset
-```bash
-python download_dataset_mendeley.py
-```
+If your backend uses a different entry point, adjust the command accordingly.
 
-### 4. Open the frontend
+### 3. Set up the frontend
 
-Open `frontend/index.html` in your browser, or serve it locally:
+Open a second terminal from the repository root:
+
 ```bash
 cd frontend
-npx serve .
+npm install
+npm run dev
 ```
-## 📓 Notebooks
 
-The `notebooks/` folder contains:
-- **EDA** — Exploratory Data Analysis of crop disease image data
-- **Model Training** — MobileNetV2 fine-tuning pipeline
-- **Evaluation** — Accuracy, Confusion Matrix, per-class metrics
+Open the local URL printed by Vite in your terminal.
 
----
+### 4. Configure environment variables
 
-## 🌱 Roadmap
+Configure the required API URLs and credentials using environment variables or local configuration files as appropriate for your implementation.
 
-- [ ] Multilingual support (Hindi, Marathi, Kannada)
-- [ ] Mobile app (React Native / Flutter)
-- [ ] Offline inference for low-connectivity rural areas
-- [ ] Government scheme recommendations (PM-Kisan, crop insurance)
-- [ ] Soil health input integration
+**Security:** Never commit API keys, passwords, access tokens, or other secrets to GitHub.
 
----
+## 🔍 Core Modules
 
-## 🙋 Author
+### Plant Disease Detection
 
-**Kashinath Biradar**  
-[GitHub](https://github.com/KashinathBiradar123) · Made with for Indian farmers
+Upload a plant-leaf image and submit it to the existing backend for model-based prediction.
 
----
+### Weather Forecasting
 
+View weather information provided by the configured weather service.
 
+### Agricultural Market Prices
 
+Explore agricultural market information returned by the configured market-data service.
+
+### AI Farming Assistant
+
+Interact with the application's existing chatbot to ask agricultural questions.
+
+## 🌱 Future Enhancements
+
+Potential improvements include:
+
+- Multilingual support for Indian languages.
+- Voice-based farming assistance.
+- Soil analysis and crop recommendations.
+- Improved accessibility for rural users.
+- Additional agricultural advisory capabilities.
+
+## 👨‍💻 Author and Contributions
+
+Developed as an AI-powered smart farming project.
+
+Repository: [Krishimitra_AI](https://github.com/rigs29/Krishimitra_AI)
+
+Contributions, suggestions, and feedback are welcome.
+
+## 📄 License
+
+Refer to the repository's `LICENSE` file for licensing terms.
