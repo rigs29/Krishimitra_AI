@@ -1,39 +1,622 @@
-/* Home page styles */
-.home-page {
-  width: 100%;
+/* ==========================================================================
+   DASHBOARD / HOME STYLES
+   ========================================================================== */
+
+.km-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
-.hero-section {
+/* ==========================================================================
+   1. HERO SECTION
+   ========================================================================== */
+
+.km-dash-hero {
+  position: relative;
+  background: linear-gradient(135deg, #102b20 0%, #163b2a 50%, #1c4b35 100%);
+  border-radius: var(--km-radius-xl);
+  padding: 3.5rem 3rem 2.5rem;
+  color: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 16px 36px -8px rgba(16, 43, 32, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.km-hero-gradient-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  background: radial-gradient(circle at 80% 20%, rgba(46, 139, 87, 0.4), transparent 70%);
+  pointer-events: none;
+}
+
+.km-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 860px;
+}
+
+.km-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--km-radius-pill);
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--km-green-fresh);
+  margin-bottom: 1.5rem;
+}
+
+.km-sparkle-icon {
+  color: var(--km-green-fresh);
+}
+
+.km-hero-title {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.km-title-highlight {
+  background: linear-gradient(90deg, #a7d7a0 0%, #58d68d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.km-hero-subtitle {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #d1ded5;
+  max-width: 680px;
+  margin-bottom: 2rem;
+}
+
+.km-hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.km-hero-primary-btn {
+  box-shadow: 0 4px 20px rgba(46, 139, 87, 0.4);
+}
+
+.km-hero-metrics {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.km-metric-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.km-metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.km-metric-label {
+  font-size: 0.775rem;
+  color: #a2b0a4;
+  font-weight: 500;
+}
+
+.km-metric-divider {
+  width: 1px;
+  height: 36px;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ==========================================================================
+   2. CORE WIDGETS GRID
+   ========================================================================== */
+
+.km-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 1.5rem;
+}
+
+.km-widget-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem;
+  min-height: 270px;
+}
+
+.km-widget-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.km-widget-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--km-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.km-widget-icon-wrap.emerald {
+  background: var(--km-green-subtle);
+  color: var(--km-emerald);
+}
+
+.km-widget-icon-wrap.forest {
+  background: rgba(22, 59, 42, 0.1);
+  color: var(--km-forest);
+}
+
+body.dark-theme .km-widget-icon-wrap.forest {
+  background: rgba(46, 139, 87, 0.2);
+  color: var(--km-green-fresh);
+}
+
+.km-widget-icon-wrap.warning {
+  background: var(--km-warning-bg);
+  color: var(--km-warning);
+}
+
+.km-widget-icon-wrap.info {
+  background: var(--km-info-bg);
+  color: var(--km-info);
+}
+
+.km-widget-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.km-widget-caption {
+  font-size: 0.75rem;
+  color: var(--km-text-muted);
+}
+
+.km-widget-desc {
+  font-size: 0.875rem;
+  color: var(--km-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.km-leaf-quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1.5rem;
+}
+
+.km-crop-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--km-forest);
+  background: var(--km-green-subtle);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--km-radius-pill);
+}
+
+body.dark-theme .km-crop-tag {
+  color: var(--km-green-fresh);
+}
+
+.km-weather-summary-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.km-weather-temp-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+}
+
+.km-weather-big-temp {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--km-forest);
+}
+
+body.dark-theme .km-weather-big-temp {
+  color: var(--km-green-fresh);
+}
+
+.km-weather-condition-pill {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--km-text-secondary);
+  background: var(--km-surface-muted);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--km-radius-pill);
+}
+
+.km-weather-mini-stats {
+  display: flex;
+  justify-content: space-between;
+  background: var(--km-surface-muted);
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--km-radius-md);
+  font-size: 0.775rem;
+  color: var(--km-text-secondary);
+}
+
+.km-mini-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.km-weather-advice-banner {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--km-green-subtle);
+  border: 1px solid var(--km-green-fresh);
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--km-radius-sm);
+  font-size: 0.775rem;
+  color: var(--km-forest);
+  line-height: 1.4;
+}
+
+body.dark-theme .km-weather-advice-banner {
+  color: #ffffff;
+  border-color: rgba(46, 139, 87, 0.4);
+}
+
+.km-market-mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.km-market-mini-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  background: var(--km-surface-muted);
+  border-radius: var(--km-radius-sm);
+}
+
+.km-mkt-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.km-mkt-info strong {
+  font-size: 0.875rem;
+  color: var(--km-text-primary);
+}
+
+.km-mkt-info span {
+  font-size: 0.725rem;
+  color: var(--km-text-muted);
+}
+
+.km-mkt-rates {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.km-mkt-change {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.km-mkt-change.positive {
+  color: var(--km-emerald);
+}
+
+.km-mkt-change.negative {
+  color: var(--km-danger);
+}
+
+.km-chat-sample-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.km-sample-prompt-chip {
+  text-align: left;
+  background: var(--km-surface-muted);
+  border: 1px solid var(--km-border);
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--km-radius-md);
+  font-size: 0.825rem;
+  color: var(--km-text-secondary);
+  cursor: pointer;
+  transition: all var(--km-transition-fast);
+}
+
+.km-sample-prompt-chip:hover {
+  background: var(--km-green-subtle);
+  color: var(--km-forest);
+  border-color: var(--km-green-fresh);
+}
+
+.km-widget-footer {
+  border-top: 1px solid var(--km-border-subtle);
+  padding-top: 1rem;
+  margin-top: auto;
+}
+
+.km-widget-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--km-emerald);
+  transition: transform var(--km-transition-fast);
+}
+
+.km-widget-link:hover {
+  transform: translateX(4px);
+  color: var(--km-forest);
+}
+
+body.dark-theme .km-widget-link:hover {
+  color: var(--km-green-fresh);
+}
+
+/* ==========================================================================
+   3. ADVISORY & RECENT SCANS TWO COLUMNS
+   ========================================================================== */
+
+.km-dash-two-col {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.5rem;
+}
+
+.km-panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--km-border-subtle);
+}
+
+.km-panel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.km-panel-title-group h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.km-date-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--km-text-muted);
+  background: var(--km-surface-muted);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--km-radius-pill);
+}
+
+.km-advisory-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  gap: 1.5rem;
+}
+
+.km-sub-heading {
+  display: flex;
   align-items: center;
-  padding: 3rem 0;
-  min-height: 600px;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.85rem;
 }
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
-  margin: 3rem auto 0;
-  padding: 0 1rem;
+.km-sub-heading.positive {
+  color: var(--km-emerald);
 }
 
-.section-header {
+.km-sub-heading.caution {
+  color: var(--km-warning);
+}
+
+.km-action-list,
+.km-caution-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0;
+}
+
+.km-action-list li,
+.km-caution-list li {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--km-text-secondary);
+  padding-left: 1.25rem;
+  position: relative;
+}
+
+.km-action-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0.25rem;
+  color: var(--km-emerald);
+  font-weight: bold;
+}
+
+.km-caution-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0.25rem;
+  color: var(--km-warning);
+  font-weight: bold;
+}
+
+/* History / Recent Scans List */
+.km-recent-scans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.km-recent-scan-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--km-surface-muted);
+  border-radius: var(--km-radius-md);
+  border: 1px solid var(--km-border-subtle);
+}
+
+.km-scan-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--km-radius-sm);
+  background: var(--km-green-subtle);
+  color: var(--km-forest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.km-scan-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.km-scan-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.km-scan-info strong {
+  font-size: 0.875rem;
+  color: var(--km-text-primary);
+}
+
+.km-scan-meta {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 0.725rem;
+  color: var(--km-text-muted);
+}
+
+.km-empty-history {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  margin-bottom: 2.5rem;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
+  padding: 2rem 1rem;
 }
 
-@media (max-width: 768px) {
-  .hero-section {
+.km-empty-sprout {
+  color: var(--km-emerald);
+  opacity: 0.75;
+  margin-bottom: 0.75rem;
+}
+
+.km-empty-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--km-text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.km-empty-sub {
+  font-size: 0.8rem;
+  color: var(--km-text-muted);
+  max-width: 280px;
+  margin-bottom: 1.25rem;
+}
+
+.km-text-link {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--km-emerald);
+  text-decoration: none;
+}
+
+.km-text-link:hover {
+  text-decoration: underline;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 991px) {
+  .km-dash-hero {
+    padding: 2.5rem 1.75rem 2rem;
+  }
+  .km-hero-title {
+    font-size: 2.25rem;
+  }
+  .km-dash-two-col {
     grid-template-columns: 1fr;
-    text-align: center;
+  }
+  .km-advisory-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .km-hero-title {
+    font-size: 1.85rem;
+  }
+  .km-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .km-hero-actions button {
+    width: 100%;
+  }
+  .km-hero-metrics {
+    gap: 1rem;
+  }
+  .km-metric-divider {
+    display: none;
   }
 }

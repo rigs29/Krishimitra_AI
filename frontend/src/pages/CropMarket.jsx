@@ -1,378 +1,537 @@
-// Crop market page
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import {
+  TrendingUp,
+  TrendingDown,
+  Search,
+  RotateCcw,
+  Sparkles,
+  ArrowUpDown,
+  Calendar,
+  Building2,
+  MapPin,
+  Crown,
+  ChevronRight,
+  Info,
+  Layers,
+  X,
+  LineChart,
+  Lightbulb,
+  Clock,
+  PackageCheck,
+  Scale,
+} from "lucide-react";
+import { getMarketPrices, getPriceTrends, getCropPriceDetails } from "../api/marketAPI";
 import "./CropMarket.css";
 
-const API_BASE_URL = "http://localhost:8000/api";
-
 function CropMarket() {
-  const [markets, setMarkets] = useState([]);
+  const [marketResponse, setMarketResponse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [searchInput, setSearchInput] = useState(""); // For input field
-  const [searchTerm, setSearchTerm] = useState(""); // For actual filtering
+  const [searchInput, setSearchInput] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [categories, setCategories] = useState(["All"]);
   const [sortBy, setSortBy] = useState("crop");
-  const [marketSummary, setMarketSummary] = useState(null);
+
+  // Selected crop for trend deep-dive drawer
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [cropTrends, setCropTrends] = useState(null);
+  const [cropDetails, setCropDetails] = useState(null);
+  const [loadingTrends, setLoadingTrends] = useState(false);
+
+  const categories = ["All", "Grains", "Pulses", "Vegetables", "Fruits", "Cash Crops"];
 
   useEffect(() => {
-    fetchMarketPrices();
-  }, []);
+    fetchPrices();
+  }, [selectedCategory, sortBy]);
 
-  const fetchMarketPrices = async () => {
+  const fetchPrices = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/market/`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch market prices");
-      }
-
-      const data = await response.json();
-      
-      setMarkets(data.prices || []);
-      setMarketSummary(data.summary || null);
-      
-      // Extract unique categories safely
-      const uniqueCategories = ["All", 
-        ...new Set(data.prices?.map(item => item.category).filter(Boolean) || [])
-      ];
-      setCategories(uniqueCategories);
-
-      toast.success("Market data loaded successfully!");
-
-    } catch (error) {
-      toast.error("Unable to load market prices");
-      console.error(error);
+      const data = await getMarketPrices({
+        category: selectedCategory !== "All" ? selectedCategory : undefined,
+        sort_by: sortBy,
+      });
+      setMarketResponse(data);
+    } catch (err) {
+      console.error("Market fetch error:", err);
+      toast.error("Failed to load live mandi data.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle search
-  const handleSearch = () => {
-    setSearchTerm(searchInput);
-    if (searchInput.trim()) {
-      toast.success(`Searching for "${searchInput}"...`);
+  // Open Crop Trend Modal / Deep Dive
+  const handleOpenCropDetails = async (cropName) => {
+    setSelectedCrop(cropName);
+    setLoadingTrends(true);
+    setCropTrends(null);
+    setCropDetails(null);
+
+    try {
+      const [trendData, detailData] = await Promise.allSettled([
+        getPriceTrends(cropName, 14, "daily"),
+        getCropPriceDetails(cropName),
+      ]);
+
+      if (trendData.status === "fulfilled") setCropTrends(trendData.value);
+      if (detailData.status === "fulfilled") setCropDetails(detailData.value);
+    } catch (err) {
+      console.error("Trend load error:", err);
+      toast.error(`Could not load trend data for ${cropName}`);
+    } finally {
+      setLoadingTrends(false);
     }
   };
 
-  // Handle key press (Enter)
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+  const closeCropDrawer = () => {
+    setSelectedCrop(null);
+    setCropTrends(null);
+    setCropDetails(null);
   };
 
-  // Clear search
-  const clearSearch = () => {
-    setSearchInput("");
-    setSearchTerm("");
-    toast.success("Search cleared");
-  };
-
-  // Safe filtering with null checks
-  const filteredMarkets = markets
-    .filter((item) => {
-      const matchesSearch = (item.crop || "")
-        .toLowerCase()
-        .includes((searchTerm || "").toLowerCase());
-      
-      const matchesCategory = selectedCategory === "All" || 
-        (item.category || "General") === selectedCategory;
-      
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
-      if (sortBy === "price") {
-        return (b.price || 0) - (a.price || 0);
-      }
-      if (sortBy === "change") {
-        return Math.abs(b.change || 0) - Math.abs(a.change || 0);
-      }
-      return (a.crop || "").localeCompare(b.crop || "");
-    });
-
-  // Calculate max price for highlighting
-  const maxPrice = Math.max(...filteredMarkets.map(m => m.price || 0), 0);
-
-  // Format price in Indian Rupees
-  const formatPrice = (price) => {
-    if (!price && price !== 0) return "N/A";
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
-
-  // Get trend icon
-  const getTrendIcon = (change) => {
-    if (!change) return "➡️";
-    if (change > 0) return "📈";
-    if (change < 0) return "📉";
-    return "➡️";
-  };
-
-  // Get trend class
-  const getTrendClass = (change) => {
-    if (!change) return "";
-    if (change > 0) return "positive";
-    if (change < 0) return "negative";
-    return "";
-  };
-
-  // Generate stable unique key
-  const getUniqueKey = (item, index) => {
-    const cropPart = (item.crop || 'unknown').replace(/\s+/g, '-').toLowerCase();
-    const marketPart = (item.market || 'unknown').replace(/\s+/g, '-').toLowerCase();
-    return `${cropPart}-${marketPart}-${index}`;
-  };
-
-  if (loading) {
+  // Filtered by local search query
+  const displayedPrices = (marketResponse?.prices || []).filter((item) => {
     return (
-      <div className="market-loading">
-        <div className="spinner"></div>
-        <p>Fetching live mandi prices from across India...</p>
-        <div className="loading-skeleton">
-          {[1,2,3,4,5].map(i => (
-            <div key={`skeleton-${i}`} className="skeleton-row"></div>
-          ))}
-        </div>
-      </div>
+      item.crop.toLowerCase().includes(searchInput.toLowerCase()) ||
+      item.market.toLowerCase().includes(searchInput.toLowerCase()) ||
+      item.state.toLowerCase().includes(searchInput.toLowerCase())
     );
-  }
+  });
+
+  const highestPriceToday = marketResponse?.summary?.highest_price || 0;
 
   return (
-    <div className="market-page">
+    <div className="km-market-page km-animate-fade-in">
+      {/* Header */}
+      <div className="km-page-header">
+        <div className="km-page-header-text">
+          <div className="km-badge km-badge-forest km-header-pill">
+            <Sparkles size={13} />
+            <span>Real-Time APMC Mandi Feeds</span>
+          </div>
+          <h2>Agricultural Commodity Price Terminal</h2>
+          <p>
+            Real-time mandi modal prices, daily percentage deltas, and predictive market
+            sentiments across major national and regional APMC markets.
+          </p>
+        </div>
 
-      {/* Header Section */}
-      <div className="market-header">
-        <h1>💰 Crop Market Prices</h1>
-        <p>Live mandi prices to help farmers sell at the best rate</p>
+        {/* Global summary stats banner */}
+        {marketResponse?.summary && (
+          <div className="km-market-summary-bar">
+            <div className="km-sum-col">
+              <span className="km-sum-lbl">Average Modal Rate</span>
+              <span className="km-sum-val mono-number">
+                ₹{Math.round(marketResponse.summary.average_price).toLocaleString("en-IN")}/qtl
+              </span>
+            </div>
+            <div className="km-sum-divider" />
+            <div className="km-sum-col">
+              <span className="km-sum-lbl">Peak Commodity Rate</span>
+              <span className="km-sum-val mono-number text-emerald">
+                ₹{Math.round(marketResponse.summary.highest_price).toLocaleString("en-IN")}
+              </span>
+            </div>
+            <div className="km-sum-divider" />
+            <div className="km-sum-col">
+              <span className="km-sum-lbl">Tracked Commodities</span>
+              <span className="km-sum-val mono-number">
+                {marketResponse.total_crops} Crops
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Market Summary Cards */}
-      {marketSummary && (
-        <div className="market-summary">
-          <div className="summary-card">
-            <span className="summary-label">Average Price</span>
-            <span className="summary-value">{formatPrice(marketSummary.average_price)}</span>
-          </div>
-          <div className="summary-card">
-            <span className="summary-label">Highest Price</span>
-            <span className="summary-value">{formatPrice(marketSummary.highest_price)}</span>
-          </div>
-          <div className="summary-card">
-            <span className="summary-label">Lowest Price</span>
-            <span className="summary-value">{formatPrice(marketSummary.lowest_price)}</span>
-          </div>
-          <div className="summary-card">
-            <span className="summary-label">Total Crops</span>
-            <span className="summary-value">{markets.length}</span>
-          </div>
+      {/* Filter and Search Controls */}
+      <div className="km-card km-market-controls-card">
+        {/* Category Pills */}
+        <div className="km-category-pills">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className={`km-cat-pill ${selectedCategory === cat ? "active" : ""}`}
+              onClick={() => setSelectedCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
-      )}
 
-      {/* Search and Filter Bar */}
-      <div className="market-controls">
-        <div className="market-search-group">
-          <div className="market-search">
+        <div className="km-controls-row">
+          <div className="km-search-box">
+            <Search size={16} className="km-search-icon" />
             <input
               type="text"
-              placeholder="🔍 Search crop (e.g., Wheat, Tomato, Rice)"
+              placeholder="Filter by crop (e.g. Wheat, Tomato) or Mandi (e.g. APMC Mumbai)..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="search-input"
+              className="km-input km-market-search-input"
             />
-            <button 
-              onClick={handleSearch} 
-              className="btn btn-primary search-btn"
-            >
-              Search
-            </button>
-            {searchTerm && (
-              <button 
-                onClick={clearSearch} 
-                className="btn btn-outline clear-btn"
-                title="Clear search"
+            {searchInput && (
+              <button
+                type="button"
+                className="km-clear-search-btn"
+                onClick={() => setSearchInput("")}
               >
-                ✕
+                <X size={14} />
               </button>
             )}
           </div>
-          {searchTerm && (
-            <div className="search-active">
-              Showing results for: <strong>"{searchTerm}"</strong>
-            </div>
-          )}
+
+          <div className="km-sort-group">
+            <ArrowUpDown size={15} className="text-muted" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="km-input km-select km-sort-select"
+            >
+              <option value="crop">Sort Alphabetical (A-Z)</option>
+              <option value="price">Highest Price First</option>
+              <option value="change">Highest Price Gain First</option>
+            </select>
+
+            <button
+              type="button"
+              onClick={fetchPrices}
+              className="km-btn km-btn-outline"
+              title="Refresh prices"
+            >
+              <RotateCcw size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ====================================================================
+          MANDI TABLE
+          ==================================================================== */}
+      <div className="km-card km-table-container-card">
+        <div className="km-table-header-bar">
+          <div className="km-table-title-wrap">
+            <h3>Live Spot Market Quotations</h3>
+            <span className="km-date-badge">
+              Feed Date: {marketResponse?.date || new Date().toISOString().split("T")[0]}
+            </span>
+          </div>
+          <span className="km-results-count">
+            Showing <strong>{displayedPrices.length}</strong> commodities
+          </span>
         </div>
 
-        <div className="market-filters">
-          <select 
-            value={selectedCategory} 
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="filter-select"
-          >
-            {categories.map(cat => (
-              <option key={`cat-${cat}`} value={cat}>{cat}</option>
+        {loading ? (
+          <div className="km-table-skeleton-wrap">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="km-skeleton" style={{ height: "46px", margin: "8px 0" }} />
             ))}
-          </select>
+          </div>
+        ) : displayedPrices.length > 0 ? (
+          <div className="km-table-scroll-area">
+            <table className="km-market-table">
+              <thead>
+                <tr>
+                  <th>Commodity</th>
+                  <th>Primary Mandi</th>
+                  <th>State Jurisdiction</th>
+                  <th className="text-right">Spot Price</th>
+                  <th className="text-right">24h Delta</th>
+                  <th>Market Trend</th>
+                  <th className="text-center">Analytics</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedPrices.map((item, idx) => {
+                  const isTopPrice = item.price === highestPriceToday;
+                  return (
+                    <tr
+                      key={idx}
+                      className={isTopPrice ? "km-top-price-row" : ""}
+                      onClick={() => handleOpenCropDetails(item.crop)}
+                    >
+                      <td className="km-td-crop">
+                        <div className="km-crop-name-cell">
+                          <strong>{item.crop}</strong>
+                          {isTopPrice && (
+                            <span className="km-crown-badge" title="Highest price commodity today">
+                              <Crown size={13} />
+                              <span>Top Mandi Rate</span>
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
-          <select 
-            value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value)}
-            className="filter-select"
-          >
-            <option value="crop">Sort by Crop Name</option>
-            <option value="price">Sort by Price (High to Low)</option>
-            <option value="change">Sort by Price Change</option>
-          </select>
+                      <td>
+                        <div className="km-mandi-cell">
+                          <Building2 size={14} className="text-muted" />
+                          <span>{item.market}</span>
+                        </div>
+                      </td>
 
-          <button onClick={fetchMarketPrices} className="btn btn-outline refresh-btn" title="Refresh prices">
-            🔄 Refresh
-          </button>
+                      <td>
+                        <div className="km-state-cell">
+                          <MapPin size={14} className="text-muted" />
+                          <span>{item.state}</span>
+                        </div>
+                      </td>
+
+                      <td className="text-right">
+                        <span className="km-price-val mono-number">
+                          ₹{item.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </span>
+                        <span className="km-unit-label">/ quintal</span>
+                      </td>
+
+                      <td className="text-right">
+                        <span
+                          className={`km-badge ${
+                            item.change > 0
+                              ? "km-badge-success"
+                              : item.change < 0
+                              ? "km-badge-danger"
+                              : "km-badge-info"
+                          }`}
+                        >
+                          {item.change > 0 ? `+${item.change}%` : `${item.change}%`}
+                        </span>
+                      </td>
+
+                      <td>
+                        <div className="km-trend-cell">
+                          {item.trend === "up" ? (
+                            <TrendingUp size={15} className="text-emerald" />
+                          ) : item.trend === "down" ? (
+                            <TrendingDown size={15} className="text-danger" />
+                          ) : (
+                            <span className="text-muted">&bull;</span>
+                          )}
+                          <span className="km-trend-text">{item.trend || "Stable"}</span>
+                        </div>
+                      </td>
+
+                      <td className="text-center">
+                        <button
+                          type="button"
+                          className="km-btn km-btn-ghost km-btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenCropDetails(item.crop);
+                          }}
+                        >
+                          <LineChart size={15} />
+                          <span>Trends</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="km-no-market-data">
+            <Search size={32} className="text-muted" />
+            <p>No agricultural commodities matched your query "{searchInput}"</p>
+            <button
+              type="button"
+              className="km-btn km-btn-outline km-btn-sm"
+              onClick={() => {
+                setSearchInput("");
+                setSelectedCategory("All");
+              }}
+            >
+              Reset Filters
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Selling Advice & Mandi Intelligence Section */}
+      <section className="km-card km-mandi-strategy-card">
+        <div className="km-strategy-header">
+          <Lightbulb size={22} className="text-emerald" />
+          <div>
+            <h3>Agronomic Mandi Trading Strategy</h3>
+            <p>Maximize realizations by understanding market dynamics and arrivals</p>
+          </div>
         </div>
-      </div>
 
-      {/* Results Count */}
-      <div className="results-count">
-        Found <strong>{filteredMarkets.length}</strong> crop{filteredMarkets.length !== 1 ? 's' : ''}
-        {searchTerm && <span> matching "<strong>{searchTerm}</strong>"</span>}
-        {selectedCategory !== "All" && <span> in category <strong>{selectedCategory}</strong></span>}
-      </div>
+        <div className="km-strategy-grid">
+          <div className="km-strategy-item">
+            <Clock size={18} className="text-warning" />
+            <div>
+              <strong>Timing the Mandi Auction</strong>
+              <p>Arrivals between 07:30 AM – 10:00 AM receive highest wholesale commission bids. Avoid afternoon heat offloading.</p>
+            </div>
+          </div>
 
-      {/* Market Table */}
-      <div className="market-table-container">
-        <table className="market-table">
-          <thead>
-            <tr>
-              <th>Crop</th>
-              <th>Category</th>
-              <th>Mandi</th>
-              <th>State</th>
-              <th>Price (per quintal)</th>
-              <th>Change</th>
-              <th>Trend</th>
-            </tr>
-          </thead>
+          <div className="km-strategy-item">
+            <PackageCheck size={18} className="text-emerald" />
+            <div>
+              <strong>Quality Grading Premium</strong>
+              <p>Segregating produce into Grade A (uniform color, pest-free) and Grade B yields 12–18% higher aggregate net price.</p>
+            </div>
+          </div>
 
-          <tbody>
-            {filteredMarkets.length > 0 ? (
-              filteredMarkets.map((item, index) => {
-                const isBestPrice = item.price === maxPrice && maxPrice > 0;
-                
-                return (
-                  <tr 
-                    key={getUniqueKey(item, index)}
-                    className={`
-                      ${item.trend === 'up' ? 'price-up' : item.trend === 'down' ? 'price-down' : ''}
-                      ${isBestPrice ? 'best-price-row' : ''}
-                    `}
-                  >
-                    <td>
-                      <strong>{item.crop || "Unknown"}</strong>
-                      {isBestPrice && <span className="best-price-badge" title="Best price today">👑</span>}
-                    </td>
-                    <td>{item.category || "General"}</td>
-                    <td>{item.market || "N/A"}</td>
-                    <td>{item.state || "N/A"}</td>
-                    <td className={`price-column ${isBestPrice ? 'best-price' : ''}`}>
-                      {formatPrice(item.price)}
-                      {isBestPrice && <small className="best-price-label"> Best</small>}
-                    </td>
-                    <td className={`change-column ${getTrendClass(item.change)}`}>
-                      {item.change > 0 ? '+' : ''}{item.change || 0}%
-                    </td>
-                    <td className="trend-column">
-                      {getTrendIcon(item.change)} {item.trend || 'stable'}
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="7" className="no-data-message">
-                  <div className="no-data-content">
-                    <span className="no-data-icon">🔍</span>
-                    <p>No crops found matching your criteria</p>
-                    <button onClick={clearSearch} className="btn btn-primary btn-small">
-                      Clear Search
-                    </button>
+          <div className="km-strategy-item">
+            <Scale size={18} className="text-info" />
+            <div>
+              <strong>Cross-Mandi Arbitrage</strong>
+              <p>Compare terminal prices in adjacent districts. Mandis within 35 km often exhibit ₹150–₹300/quintal price spread.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          DEEP-DIVE TREND MODAL / DRAWER
+          ==================================================================== */}
+      {selectedCrop && (
+        <div className="km-modal-backdrop" onClick={closeCropDrawer}>
+          <div className="km-trend-modal km-animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="km-modal-header">
+              <div className="km-modal-title-group">
+                <span className="km-badge km-badge-forest">Commodity Analytics</span>
+                <h2>{selectedCrop} Price Intelligence</h2>
+              </div>
+              <button type="button" className="km-modal-close-btn" onClick={closeCropDrawer}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {loadingTrends ? (
+              <div className="km-modal-loading">
+                <div className="km-spinner-dot" />
+                <p>Retrieving historical trends and predictive forecast...</p>
+              </div>
+            ) : cropTrends ? (
+              <div className="km-modal-body">
+                {/* Stats row */}
+                <div className="km-modal-stats-row">
+                  <div className="km-mstat-box">
+                    <span className="lbl">Average Price</span>
+                    <span className="val mono-number">
+                      ₹{cropTrends.statistics?.average_price?.toLocaleString("en-IN") || "—"}
+                    </span>
                   </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Best Price Advice - Only show when there are results */}
-      {filteredMarkets.length > 0 && (
-        <div className="price-advice">
-          <div className="advice-banner">
-            <span className="advice-icon">💡</span>
-            <p>
-              <strong>Pro Tip:</strong> The <span className="highlight">👑 crown icon</span> shows the highest price today. 
-              Consider selling at these mandis for maximum profit!
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Market News Section - Only show when there are results */}
-      {filteredMarkets.length > 0 && (
-        <div className="market-news">
-          <h3>📰 Market News & Tips</h3>
-          <div className="news-grid">
-            {filteredMarkets.slice(0, 3).map((item, index) => {
-              const newsText = item.news || 
-                `${item.crop || 'Crop'} prices are ${item.trend || 'stable'} in ${item.market || 'major mandis'}. ${
-                  item.change > 0 ? 'Prices are rising!' : 
-                  item.change < 0 ? 'Prices have dropped.' : 
-                  'Market is stable.'
-                }`;
-              
-              return (
-                <div key={`news-${index}`} className="news-card">
-                  <h4>{item.crop || "Market Update"}</h4>
-                  <p>{newsText}</p>
-                  <span className="news-time">Updated just now</span>
+                  <div className="km-mstat-box">
+                    <span className="lbl">Highest Observed</span>
+                    <span className="val mono-number text-emerald">
+                      ₹{cropTrends.statistics?.highest_price?.toLocaleString("en-IN") || "—"}
+                    </span>
+                  </div>
+                  <div className="km-mstat-box">
+                    <span className="lbl">Lowest Observed</span>
+                    <span className="val mono-number text-danger">
+                      ₹{cropTrends.statistics?.lowest_price?.toLocaleString("en-IN") || "—"}
+                    </span>
+                  </div>
+                  <div className="km-mstat-box">
+                    <span className="lbl">Price Volatility</span>
+                    <span className="val mono-number">
+                      {cropTrends.statistics?.volatility || 0}%
+                    </span>
+                  </div>
                 </div>
-              );
-            })}
+
+                {/* SVG Visual Price Trend Chart */}
+                <div className="km-chart-container">
+                  <h4>14-Day Modal Price Trajectory</h4>
+                  <div className="km-svg-chart-wrap">
+                    <svg viewBox="0 0 600 180" className="km-trend-svg">
+                      <defs>
+                        <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#2e8b57" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#2e8b57" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Plot path */}
+                      {(() => {
+                        const trends = cropTrends.trends || [];
+                        if (trends.length < 2) return null;
+                        const prices = trends.map((t) => t.price);
+                        const min = Math.min(...prices) * 0.95;
+                        const max = Math.max(...prices) * 1.05;
+                        const range = max - min || 1;
+
+                        const points = trends.map((t, idx) => {
+                          const x = (idx / (trends.length - 1)) * 560 + 20;
+                          const y = 160 - ((t.price - min) / range) * 130;
+                          return { x, y, price: t.price, date: t.date };
+                        });
+
+                        const dPath = points.reduce(
+                          (acc, p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`),
+                          ""
+                        );
+                        const areaPath = `${dPath} L ${points[points.length - 1].x} 170 L ${points[0].x} 170 Z`;
+
+                        return (
+                          <>
+                            <path d={areaPath} fill="url(#trendGrad)" />
+                            <path d={dPath} fill="none" stroke="#2e8b57" strokeWidth="3" />
+                            {points.map((p, i) => (
+                              <g key={i}>
+                                <circle cx={p.x} cy={p.y} r="4" fill="#163b2a" stroke="#ffffff" strokeWidth="2" />
+                              </g>
+                            ))}
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+
+                  {/* Date labels under chart */}
+                  <div className="km-chart-x-labels">
+                    {cropTrends.trends?.map((t, i) => (
+                      <span key={i} className="km-x-label mono-number">
+                        {new Date(t.date).toLocaleDateString([], { month: "numeric", day: "numeric" })}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* AI Predictive Outlook Box */}
+                {cropTrends.prediction && (
+                  <div className="km-prediction-box">
+                    <div className="km-pred-header">
+                      <Sparkles size={16} className="text-emerald" />
+                      <strong>AI Next-Period Forecast Outlook:</strong>
+                    </div>
+                    <div className="km-pred-row">
+                      <span>
+                        Next 7 Days Expected:{" "}
+                        <strong className="mono-number text-forest">
+                          ₹{cropTrends.prediction.next_week}/qtl
+                        </strong>
+                      </span>
+                      <span>
+                        Next Month Range:{" "}
+                        <strong className="mono-number text-forest">
+                          ₹{cropTrends.prediction.next_month}/qtl
+                        </strong>
+                      </span>
+                      <span className="km-badge km-badge-forest">
+                        {cropTrends.prediction.confidence} Confidence
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Crop Specific Advice */}
+                {cropDetails?.farming_advice && (
+                  <div className="km-crop-mkt-advice">
+                    <Info size={16} />
+                    <p>{cropDetails.farming_advice}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p>No trend history available for {selectedCrop}.</p>
+            )}
           </div>
         </div>
       )}
-
-      {/* Farming Advice - Always show */}
-      <div className="farming-advice">
-        <h3>🌾 Selling Advice for Better Profits</h3>
-        <div className="advice-cards">
-          <div className="advice-card">
-            <span className="advice-icon">⏰</span>
-            <h4>Best Time to Sell</h4>
-            <p>Morning hours (8-11 AM) usually get better prices. Avoid selling during peak afternoon heat.</p>
-          </div>
-          <div className="advice-card">
-            <span className="advice-icon">📦</span>
-            <h4>Quality Grading</h4>
-            <p>Clean, sorted produce gets 10-15% higher price. Remove damaged items before going to mandi.</p>
-          </div>
-          <div className="advice-card">
-            <span className="advice-icon">🏪</span>
-            <h4>Compare Multiple Mandis</h4>
-            <p>Check prices in 2-3 nearby mandis. Sometimes traveling 20km can get you ₹200-300 more per quintal.</p>
-          </div>
-          <div className="advice-card">
-            <span className="advice-icon">📊</span>
-            <h4>Track Price Trends</h4>
-            <p>Prices are usually higher on Mondays and Fridays. Avoid selling on holidays when demand is low.</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

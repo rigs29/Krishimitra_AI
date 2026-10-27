@@ -1,412 +1,402 @@
-// AI advisor page
 import React, { useState, useEffect, useContext, useRef } from "react";
-import { Link } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+import {
+  BotMessageSquare,
+  Send,
+  User,
+  Sparkles,
+  Trash2,
+  ThumbsUp,
+  Star,
+  CornerDownLeft,
+  Sprout,
+  HelpCircle,
+  Lightbulb,
+  CheckCircle2,
+  RefreshCw,
+  Info,
+} from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
+import { sendChatMessage, getChatInfo, submitChatFeedback } from "../api/chatAPI";
 import "./AIAdvisor.css";
 
-const API_BASE_URL = "http://localhost:8000/api";
-
 function AIAdvisor() {
-  const { user } = useContext(AuthContext);
+  const { user, login } = useContext(AuthContext);
+  const location = useLocation();
   const messagesEndRef = useRef(null);
-  
-  // State for chat
+  const inputRef = useRef(null);
+
+  // Chat conversation state
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: "👋 **Namaste!** I'm your KrishiMitra AI farming assistant. How can I help you with your farm today?",
-      timestamp: new Date().toISOString()
-    }
+      content:
+        "🙏 **Namaste!** I am your KrishiMitra AI agronomist assistant. How can I help you optimize your crop yield, soil fertility, or market strategy today?",
+      timestamp: new Date().toISOString(),
+      confidence: 1.0,
+      category: "general",
+    },
   ]);
+
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
-  const [suggestions, setSuggestions] = useState([
-    "How to grow wheat?",
-    "Best fertilizer for tomato",
-    "Aphid control in mustard",
-    "Current potato price",
-    "Weather impact on crops"
-  ]);
+  const [sessionId, setSessionId] = useState("");
   const [chatInfo, setChatInfo] = useState(null);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
-  // Scroll to bottom when messages update
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // Starter prompts supported by backend knowledge base
+  const defaultSuggestions = [
+    "How to treat early blight in tomato?",
+    "When to apply Urea vs DAP fertilizer?",
+    "Organic aphid pest control remedies",
+    "Current market rates for wheat and rice",
+    "How to maintain 5cm water for paddy crop?",
+  ];
 
-  // Fetch chat info on mount
+  const [currentSuggestions, setCurrentSuggestions] = useState(defaultSuggestions);
+
+  // Initialize session and prefilled prompts (e.g. from disease detection link)
   useEffect(() => {
-    fetchChatInfo();
-    // Generate or get session ID
-    const existingSession = localStorage.getItem("chatSessionId");
-    if (existingSession) {
-      setSessionId(existingSession);
-    } else {
-      const newSession = Math.random().toString(36).substring(2, 10);
-      localStorage.setItem("chatSessionId", newSession);
-      setSessionId(newSession);
+    let activeSession = localStorage.getItem("km_chat_session_id");
+    if (!activeSession) {
+      activeSession = Math.random().toString(36).substring(2, 10);
+      localStorage.setItem("km_chat_session_id", activeSession);
+    }
+    setSessionId(activeSession);
+
+    // Fetch API metadata
+    getChatInfo()
+      .then((data) => setChatInfo(data))
+      .catch((err) => console.log("Chat info fetch silently handled:", err));
+
+    // Check if navigated with state prompt
+    if (location.state?.initialPrompt) {
+      setTimeout(() => {
+        handleSendMessage(location.state.initialPrompt);
+      }, 300);
     }
   }, []);
 
-  // 👈 FIX 2: Added safety check for scroll
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+  // Scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  // Quick Demo Login for instant access
+  const handleDemoLogin = () => {
+    login({
+      name: "Ramesh Patel",
+      email: "ramesh.patel@farm.in",
+      role: "Lead Farmer",
+    });
+    toast.success("Logged in as Ramesh Patel (Demo Farmer)!");
   };
 
-  // Fetch chat info from backend
-  const fetchChatInfo = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/chat/`);
-      if (response.ok) {
-        const data = await response.json();
-        setChatInfo(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch chat info:", error);
-    }
-  };
+  // Send message
+  const handleSendMessage = async (textToSend = inputMessage) => {
+    const trimmed = textToSend.trim();
+    if (!trimmed || loading) return;
 
-  // Send message to backend
-  const sendMessage = async (messageText = inputMessage) => {
-    // 👈 FIX 3: Prevent double messages
-    if (loading) return;
-    
-    if (!messageText.trim()) return;
-    
-    if (!user) {
-      toast.error("Please login to chat with AI Advisor", {
-        icon: "🔒",
-        duration: 3000
-      });
-      return;
-    }
-
-    // Add user message to UI
-    const userMessage = {
+    const userMsg = {
       role: "user",
-      content: messageText,
-      timestamp: new Date().toISOString()
+      content: trimmed,
+      timestamp: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage(""); // Clear input immediately
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInputMessage("");
     setLoading(true);
 
     try {
-      // Prepare chat history for context
-      const chatHistory = messages
-        .filter(msg => msg.role !== "system")
-        .slice(-6); // Last 6 messages for context
+      const historyContext = messages.slice(-6).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
 
-      const response = await fetch(`${API_BASE_URL}/chat/message`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: messageText,
-          session_id: sessionId,
-          history: chatHistory,
-          language: "english",
-          farmer_id: user?.id || null
-        }),
+      const res = await sendChatMessage({
+        message: trimmed,
+        session_id: sessionId,
+        history: historyContext,
+        language: "english",
+        farmer_id: user?.email || "anonymous_farmer",
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Failed to get response");
-      }
-
-      const data = await response.json();
-
-      // Add assistant response to UI
-      const assistantMessage = {
+      const assistantMsg = {
         role: "assistant",
-        content: data.response,
-        timestamp: data.timestamp,
-        confidence: data.confidence,
-        category: data.category,
-        follow_up: data.follow_up_questions,
-        action_items: data.action_items
+        content: res.response,
+        timestamp: res.timestamp || new Date().toISOString(),
+        confidence: res.confidence,
+        category: res.category,
+        followUp: res.follow_up_questions || [],
+        actionItems: res.action_items || [],
       };
-      
-      setMessages(prev => [...prev, assistantMessage]);
 
-      // Update suggestions if available
-      if (data.suggestions && data.suggestions.length > 0) {
-        setSuggestions(data.suggestions);
+      setMessages((prev) => [...prev, assistantMsg]);
+
+      if (res.follow_up_questions && res.follow_up_questions.length > 0) {
+        setCurrentSuggestions(res.follow_up_questions);
+      } else if (res.suggestions && res.suggestions.length > 0) {
+        setCurrentSuggestions(res.suggestions);
       }
-
-      // Show confidence for debugging (optional)
-      if (data.confidence < 0.5) {
-        toast("I'm not fully confident about this answer. Please verify with local experts.", {
-          icon: "⚠️",
-          duration: 4000
-        });
-      }
-
-    } catch (error) {
-      toast.error(error.message || "Failed to send message");
-      console.error("Chat error:", error);
+    } catch (err) {
+      console.error("Chat error:", err);
+      toast.error(err.message || "Failed to reach AI assistant");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "⚠️ I experienced a temporary connection delay. Please ensure the backend server is running and try again.",
+          timestamp: new Date().toISOString(),
+          isError: true,
+        },
+      ]);
     } finally {
       setLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
-  // Handle form submit
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    sendMessage();
-  };
-
-  // 👈 FIX 1: Fixed suggestion click handler
-  const handleSuggestionClick = (suggestion) => {
-    sendMessage(suggestion);
-  };
-
-  // Handle key press for Enter key
   const handleKeyDown = (e) => {
-    // 👈 NEW: Enter to send (like WhatsApp/ChatGPT)
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // Prevent new line
-      sendMessage();
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
-  // Clear chat history
-  const handleClearChat = () => {
-    if (window.confirm("Clear chat history?")) {
+  const clearChat = () => {
+    if (window.confirm("Clear current conversation history?")) {
       setMessages([
         {
           role: "assistant",
-          content: "👋 **Namaste!** I'm your KrishiMitra AI farming assistant. How can I help you with your farm today?",
-          timestamp: new Date().toISOString()
-        }
+          content:
+            "🙏 Conversation cleared. Ask me any new agronomy or market question!",
+          timestamp: new Date().toISOString(),
+          confidence: 1.0,
+          category: "general",
+        },
       ]);
-      toast.success("Chat cleared");
+      setCurrentSuggestions(defaultSuggestions);
+      setFeedbackSubmitted(false);
+      setFeedbackRating(0);
+      toast.success("Conversation cleared");
     }
   };
 
-  // Format timestamp
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  const handleRating = async (stars) => {
+    setFeedbackRating(stars);
+    try {
+      await submitChatFeedback(sessionId, stars, "User rating");
+      setFeedbackSubmitted(true);
+      toast.success("Thank you for your rating!");
+    } catch (err) {
+      console.warn("Feedback err:", err);
+    }
   };
 
-  // Render message content with markdown-like formatting
-  const renderMessage = (content) => {
-    // Simple formatting: bold text between ** **
-    const parts = content.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={index}>{part.slice(2, -2)}</strong>;
+  // Render markdown-like bold text
+  const formatContent = (text) => {
+    if (!text) return "";
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={i}>{part.slice(2, -2)}</strong>;
       }
       return part;
     });
   };
 
-  // If not logged in, show login prompt
-  if (!user) {
-    return (
-      <div className="advisor-login-prompt">
-        <div className="lock-icon">🔒</div>
-        <h2>Login Required</h2>
-        <p>Please login to access the AI Advisor and get personalized farming advice.</p>
-        <Link to="/login" className="btn btn-primary">
-          Login to Continue
-        </Link>
-        <p className="guest-note">
-          New here? <Link to="/signup">Create an account</Link> - It's free!
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="advisor-page">
-      
-      {/* Header */}
-      <div className="advisor-header">
-        <div className="advisor-title">
-          <h1>🤖 AI Farming Advisor</h1>
-          <p>Ask me anything about farming, crops, pests, or markets</p>
+    <div className="km-advisor-page km-animate-fade-in">
+      {/* Top Banner */}
+      <div className="km-advisor-top-bar">
+        <div className="km-advisor-brand">
+          <div className="km-advisor-avatar-box">
+            <BotMessageSquare size={24} />
+          </div>
+          <div>
+            <div className="km-advisor-title-row">
+              <h2>KrishiMitra Agronomist Copilot</h2>
+              <span className="km-badge km-badge-success">Online &bull; 24/7</span>
+            </div>
+            <p className="km-advisor-meta">
+              Autonomous agronomy engine &bull; Pest control, fertilizers, sowing calendar & market rates
+            </p>
+          </div>
         </div>
-        <div className="advisor-actions">
-          <button onClick={handleClearChat} className="btn btn-outline" title="Clear chat">
-            🗑️ Clear
+
+        <div className="km-advisor-top-actions">
+          <button
+            type="button"
+            onClick={clearChat}
+            className="km-btn km-btn-outline km-btn-sm"
+            title="Clear Chat History"
+          >
+            <Trash2 size={15} />
+            <span>Clear</span>
           </button>
         </div>
       </div>
 
-      {/* Chat Info Banner */}
-      {chatInfo && (
-        <div className="chat-info-banner">
-          <span>✨ {chatInfo.capabilities?.length || 5}+ farming topics</span>
-          <span>🌱 {chatInfo.languages_supported?.[0] || "English"}</span>
-          <span className="disclaimer">{chatInfo.disclaimer}</span>
-        </div>
-      )}
+      {/* Main Chat Container */}
+      <div className="km-chat-shell">
+        {/* Messages Stream */}
+        <div className="km-messages-scroll-stream">
+          {messages.map((msg, index) => {
+            const isUser = msg.role === "user";
+            return (
+              <div
+                key={index}
+                className={`km-message-row ${isUser ? "user-row" : "assistant-row"}`}
+              >
+                <div className={`km-msg-avatar ${isUser ? "user" : "assistant"}`}>
+                  {isUser ? <User size={16} /> : <Sprout size={16} />}
+                </div>
 
-      {/* Chat Container */}
-      <div className="chat-container">
-        
-        {/* Messages Area */}
-        <div className="messages-area">
-          {messages.map((msg, index) => (
-            <div 
-              key={index} 
-              className={`message ${msg.role === "user" ? "user-message" : "assistant-message"}`}
-            >
-              <div className="message-avatar">
-                {msg.role === "user" ? "👤" : "🤖"}
-              </div>
-              <div className="message-content">
-                <div className="message-header">
-                  <span className="message-sender">
-                    {msg.role === "user" ? "You" : "KrishiMitra AI"}
-                  </span>
-                  <span className="message-time">{formatTime(msg.timestamp)}</span>
-                </div>
-                <div className="message-text">
-                  {renderMessage(msg.content)}
-                </div>
-                
-                {/* Show confidence for assistant messages */}
-                {msg.role === "assistant" && msg.confidence && (
-                  <div className="message-confidence">
-                    Confidence: {Math.round(msg.confidence * 100)}%
-                  </div>
-                )}
-                
-                {/* Show action items */}
-                {msg.role === "assistant" && msg.action_items?.length > 0 && (
-                  <div className="action-items">
-                    <strong>📋 Action Items:</strong>
-                    <ul>
-                      {msg.action_items.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {/* Show follow-up questions */}
-                {msg.role === "assistant" && msg.follow_up?.length > 0 && (
-                  <div className="follow-up">
-                    <strong>💡 You might also ask:</strong>
-                    <div className="follow-up-buttons">
-                      {msg.follow_up.map((question, i) => (
-                        <button
-                          key={i}
-                          className="follow-up-btn"
-                          onClick={() => handleSuggestionClick(question)}
-                        >
-                          {question}
-                        </button>
-                      ))}
+                <div className="km-msg-bubble-wrapper">
+                  <div className={`km-msg-bubble ${isUser ? "user" : "assistant"}`}>
+                    <div className="km-msg-text">{formatContent(msg.content)}</div>
+
+                    {/* Action Items if provided */}
+                    {msg.actionItems && msg.actionItems.length > 0 && (
+                      <div className="km-msg-action-items">
+                        <strong>Action Steps:</strong>
+                        <ul>
+                          {msg.actionItems.map((item, idx) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="km-msg-footer">
+                      <span className="km-msg-time mono-number">
+                        {new Date(msg.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      {!isUser && msg.confidence !== undefined && (
+                        <span className="km-msg-conf mono-number">
+                          {Math.round(msg.confidence * 100)}% match
+                        </span>
+                      )}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          ))}
-          
-          {/* Loading indicator */}
-          {loading && (
-            <div className="message assistant-message">
-              <div className="message-avatar">🤖</div>
-              <div className="message-content">
-                <div className="typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+
+                  {/* Follow-up Question Chips under assistant bubble */}
+                  {!isUser && msg.followUp && msg.followUp.length > 0 && (
+                    <div className="km-bubble-followups">
+                      <span className="km-followup-label">
+                        <Lightbulb size={12} /> Suggested follow-up:
+                      </span>
+                      <div className="km-followup-chips">
+                        {msg.followUp.map((q, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className="km-followup-chip"
+                            onClick={() => handleSendMessage(q)}
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
+            );
+          })}
+
+          {/* Typing Indicator */}
+          {loading && (
+            <div className="km-message-row assistant-row">
+              <div className="km-msg-avatar assistant">
+                <Sprout size={16} />
+              </div>
+              <div className="km-typing-bubble">
+                <span className="km-typing-dot" />
+                <span className="km-typing-dot" />
+                <span className="km-typing-dot" />
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Suggestions Area */}
-        {suggestions.length > 0 && !loading && (
-          <div className="suggestions-area">
-            <p className="suggestions-title">💬 Suggested questions:</p>
-            <div className="suggestions-list">
-              {suggestions.map((suggestion, index) => (
+        {/* Suggestion Chips Bar */}
+        {currentSuggestions.length > 0 && !loading && (
+          <div className="km-suggestions-dock">
+            <span className="km-sugg-title">
+              <Sparkles size={13} className="text-emerald" /> Try asking:
+            </span>
+            <div className="km-sugg-chips-row">
+              {currentSuggestions.map((sugg, i) => (
                 <button
-                  key={index}
-                  className="suggestion-chip"
-                  onClick={() => handleSuggestionClick(suggestion)}
+                  key={i}
+                  type="button"
+                  className="km-sugg-chip"
+                  onClick={() => handleSendMessage(sugg)}
                 >
-                  {suggestion}
+                  {sugg}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Input Area */}
-        <form onSubmit={handleSubmit} className="chat-input-form">
-          <input
-            type="text"
+        {/* Input Bar */}
+        <div className="km-chat-input-bar">
+          <textarea
+            ref={inputRef}
+            rows={1}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyDown={handleKeyDown}  // 👈 NEW: Enter key handler
-            placeholder="Ask about crops, fertilizers, pests, weather, markets... (Press Enter to send)"
-            className="chat-input"
+            onKeyDown={handleKeyDown}
+            placeholder="Ask about crop diseases, pest remedies, urea/DAP dosage, or mandi rates... (Enter to send)"
+            className="km-chat-textarea"
             disabled={loading}
           />
-          <button 
-            type="submit" 
-            className="send-button"
-            disabled={loading || !inputMessage.trim()}
-          >
-            {loading ? "..." : "📤 Send"}
-          </button>
-        </form>
 
-        {/* Quick Actions */}
-        <div className="quick-actions">
-          <button 
-            className="quick-action-btn"
-            onClick={() => handleSuggestionClick("What crops should I plant this season?")}
+          <button
+            type="button"
+            onClick={() => handleSendMessage()}
+            disabled={!inputMessage.trim() || loading}
+            className="km-chat-send-btn"
+            title="Send message (Enter)"
+            aria-label="Send message"
           >
-            🌱 Crop Planning
-          </button>
-          <button 
-            className="quick-action-btn"
-            onClick={() => handleSuggestionClick("How to control pests naturally?")}
-          >
-            🐛 Pest Control
-          </button>
-          <button 
-            className="quick-action-btn"
-            onClick={() => handleSuggestionClick("Best fertilizer for vegetables")}
-          >
-            🧪 Fertilizer
-          </button>
-          <button 
-            className="quick-action-btn"
-            onClick={() => handleSuggestionClick("Current market prices")}
-          >
-            💰 Market Prices
+            <Send size={18} />
           </button>
         </div>
-      </div>
 
-      {/* Footer note */}
-      <div className="advisor-footer">
-        <p>
-          ⚠️ AI-generated advice. Always consult with local agricultural experts for critical decisions.
-          <br />
-          <Link to="/feedback">Give Feedback</Link> to help us improve.
-        </p>
+        {/* Footer Rating & Disclaimer */}
+        <div className="km-chat-footer-bar">
+          <div className="km-rating-group">
+            <span>Rate this assistant:</span>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                className={`km-star-btn ${star <= feedbackRating ? "filled" : ""}`}
+                onClick={() => handleRating(star)}
+                disabled={feedbackSubmitted}
+                title={`Rate ${star} stars`}
+              >
+                <Star size={14} />
+              </button>
+            ))}
+            {feedbackSubmitted && <span className="km-feedback-thanks">Thank you!</span>}
+          </div>
+
+          <span className="km-chat-disclaimer">
+            &bull; AI agronomic advisory. For critical field interventions, verify with local KVK.
+          </span>
+        </div>
       </div>
     </div>
   );

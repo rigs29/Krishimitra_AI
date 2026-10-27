@@ -1,0 +1,295 @@
+/* ==========================================================================
+   SIDEBAR COMPONENT STYLES
+   Modern Collapsible Glass & Forest Design
+   ========================================================================== */
+
+.km-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 270px;
+  background-color: var(--km-surface);
+  border-right: 1px solid var(--km-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: width var(--km-transition-smooth), transform var(--km-transition-smooth);
+}
+
+.km-sidebar.collapsed {
+  width: 80px;
+}
+
+/* Header & Brand */
+.km-sidebar-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--km-border);
+}
+
+.km-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.km-brand-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: var(--km-radius-md);
+  background: linear-gradient(135deg, var(--km-forest), var(--km-emerald));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(22, 59, 42, 0.25);
+}
+
+.km-brand-sprout {
+  color: #ffffff;
+}
+
+.km-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.km-brand-title {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  color: var(--km-forest);
+}
+
+body.dark-theme .km-brand-title {
+  color: #ffffff;
+}
+
+.km-brand-subtitle {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--km-emerald);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.km-sidebar-toggle-btn {
+  background: var(--km-surface-muted);
+  border: 1px solid var(--km-border);
+  color: var(--km-text-secondary);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--km-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--km-transition-fast);
+}
+
+.km-sidebar-toggle-btn:hover {
+  background: var(--km-green-subtle);
+  color: var(--km-forest);
+  border-color: var(--km-green-fresh);
+}
+
+.km-sidebar.collapsed .km-sidebar-toggle-btn {
+  margin: 0 auto;
+}
+
+/* Nav Area */
+.km-sidebar-nav {
+  flex: 1;
+  padding: 1.25rem 0.85rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.km-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.km-nav-group-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--km-text-muted);
+  padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.km-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--km-radius-md);
+  color: var(--km-text-secondary);
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--km-transition-fast);
+  position: relative;
+}
+
+.km-nav-icon-wrap {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+}
+
+.km-nav-icon {
+  color: var(--km-text-secondary);
+  transition: color var(--km-transition-fast);
+}
+
+.km-nav-item:hover {
+  background-color: var(--km-surface-hover);
+  color: var(--km-forest);
+}
+
+body.dark-theme .km-nav-item:hover {
+  color: var(--km-green-fresh);
+}
+
+.km-nav-item:hover .km-nav-icon {
+  color: var(--km-emerald);
+}
+
+.km-nav-item.active {
+  background-color: var(--km-green-subtle);
+  color: var(--km-forest);
+  font-weight: 700;
+}
+
+body.dark-theme .km-nav-item.active {
+  color: #ffffff;
+  background-color: rgba(46, 139, 87, 0.2);
+}
+
+.km-nav-item.active .km-nav-icon {
+  color: var(--km-emerald);
+}
+
+.km-nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background-color: var(--km-emerald);
+}
+
+.km-nav-badge {
+  margin-left: auto;
+  font-size: 0.675rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--km-radius-pill);
+  background-color: var(--km-surface-muted);
+  color: var(--km-text-muted);
+  border: 1px solid var(--km-border);
+}
+
+.km-nav-item.active .km-nav-badge {
+  background-color: #ffffff;
+  color: var(--km-forest);
+  border-color: var(--km-green-fresh);
+}
+
+body.dark-theme .km-nav-item.active .km-nav-badge {
+  background-color: var(--km-surface);
+  color: var(--km-green-fresh);
+  border-color: var(--km-border);
+}
+
+/* Status Card at Bottom */
+.km-sidebar-status-card {
+  margin: 0.85rem;
+  padding: 0.85rem;
+  border-radius: var(--km-radius-md);
+  background: var(--km-surface-muted);
+  border: 1px solid var(--km-border);
+}
+
+.km-status-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.km-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--km-emerald);
+  box-shadow: 0 0 0 3px rgba(46, 139, 87, 0.25);
+  animation: kmPulse 2s infinite;
+}
+
+.km-status-title {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: var(--km-text-primary);
+}
+
+.km-status-sub {
+  font-size: 0.7rem;
+  color: var(--km-text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.km-status-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.675rem;
+  color: var(--km-text-secondary);
+  border-top: 1px solid var(--km-border);
+  padding-top: 0.4rem;
+}
+
+/* Responsive & Mobile Drawer */
+.km-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  .km-sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--km-shadow-xl);
+  }
+
+  .km-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .km-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(16, 43, 32, 0.45);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+  }
+}
+

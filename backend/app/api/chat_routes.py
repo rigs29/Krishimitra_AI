@@ -184,7 +184,7 @@ def generate_response(category,confidence,matched_data):
         response_text = matched_data["response"]
         follow_up = matched_data.get("follow_up",[])
     else:
-        response_text = KNOWLEDGE_BASE[category]["default"]
+        response_text = KNOWLEDGE_BASE[category]["default"] if category in KNOWLEDGE_BASE else "I am KrishiMitra AI, your farming assistant. Ask me anything about crops, soil, pests, weather, or market rates!"
         follow_up = []
 
     return response_text, follow_up

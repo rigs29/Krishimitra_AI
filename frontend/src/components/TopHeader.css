@@ -1,0 +1,380 @@
+/* ==========================================================================
+   TOP HEADER COMPONENT STYLES
+   ========================================================================== */
+
+.km-top-header {
+  position: sticky;
+  top: 0;
+  height: 72px;
+  background-color: var(--km-surface);
+  border-bottom: 1px solid var(--km-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.75rem;
+  z-index: 90;
+  transition: all var(--km-transition-normal);
+  backdrop-filter: blur(8px);
+}
+
+.km-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.km-mobile-menu-trigger {
+  display: none;
+  background: var(--km-surface-muted);
+  border: 1px solid var(--km-border);
+  color: var(--km-text-primary);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--km-radius-md);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.km-header-title-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.km-header-breadcrumb {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--km-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.km-header-page-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--km-text-primary);
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.km-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* Weather Mini Pill */
+.km-header-weather-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--km-surface-muted);
+  border: 1px solid var(--km-border);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--km-radius-pill);
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--km-text-primary);
+  text-decoration: none;
+  transition: all var(--km-transition-fast);
+}
+
+.km-header-weather-pill:hover {
+  background: var(--km-green-subtle);
+  border-color: var(--km-green-fresh);
+  transform: translateY(-1px);
+}
+
+.km-weather-pill-icon {
+  color: #f59e0b;
+}
+
+.km-weather-pill-temp {
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--km-forest);
+}
+
+body.dark-theme .km-weather-pill-temp {
+  color: var(--km-green-fresh);
+}
+
+.km-weather-pill-condition {
+  color: var(--km-text-secondary);
+  font-size: 0.775rem;
+}
+
+/* Quick Action button in header */
+.km-header-quick-action {
+  box-shadow: none;
+}
+
+/* Icon Buttons */
+.km-header-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--km-radius-md);
+  background: var(--km-surface-muted);
+  border: 1px solid var(--km-border);
+  color: var(--km-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--km-transition-fast);
+}
+
+.km-header-icon-btn:hover {
+  background: var(--km-surface-hover);
+  color: var(--km-forest);
+  border-color: var(--km-text-muted);
+}
+
+.km-theme-sun {
+  color: #f59e0b;
+}
+
+/* Notification badge */
+.km-notif-badge-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--km-emerald);
+  box-shadow: 0 0 0 2px var(--km-surface);
+}
+
+/* Popovers */
+.km-header-popover-anchor {
+  position: relative;
+}
+
+.km-notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 340px;
+  background: var(--km-surface);
+  border: 1px solid var(--km-border);
+  border-radius: var(--km-radius-lg);
+  box-shadow: var(--km-shadow-xl);
+  overflow: hidden;
+  z-index: 200;
+}
+
+.km-dropdown-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--km-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.km-dropdown-header h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.km-notifications-list {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.km-notif-card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--km-border-subtle);
+  transition: background-color var(--km-transition-fast);
+}
+
+.km-notif-card:hover {
+  background-color: var(--km-surface-hover);
+}
+
+.km-notif-icon-wrap {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: var(--km-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.km-notif-card.warning .km-notif-icon-wrap {
+  background: var(--km-warning-bg);
+  color: var(--km-warning);
+}
+
+.km-notif-card.success .km-notif-icon-wrap {
+  background: var(--km-success-bg);
+  color: var(--km-success);
+}
+
+.km-notif-card.info .km-notif-icon-wrap {
+  background: var(--km-info-bg);
+  color: var(--km-info);
+}
+
+.km-notif-content h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--km-text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.km-notif-content p {
+  font-size: 0.775rem;
+  color: var(--km-text-secondary);
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+}
+
+.km-notif-time {
+  font-size: 0.7rem;
+  color: var(--km-text-muted);
+}
+
+/* User pill button & Dropdown */
+.km-user-pill-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: var(--km-surface-muted);
+  border: 1px solid var(--km-border);
+  padding: 0.35rem 0.75rem 0.35rem 0.4rem;
+  border-radius: var(--km-radius-pill);
+  cursor: pointer;
+  transition: all var(--km-transition-fast);
+}
+
+.km-user-pill-btn:hover {
+  background: var(--km-surface-hover);
+  border-color: var(--km-text-muted);
+}
+
+.km-user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--km-forest), var(--km-emerald));
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.km-user-pill-name {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--km-text-primary);
+}
+
+.km-user-pill-caret {
+  color: var(--km-text-muted);
+}
+
+.km-user-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 230px;
+  background: var(--km-surface);
+  border: 1px solid var(--km-border);
+  border-radius: var(--km-radius-lg);
+  box-shadow: var(--km-shadow-xl);
+  overflow: hidden;
+  z-index: 200;
+}
+
+.km-user-dropdown-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--km-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.km-user-dropdown-header strong {
+  font-size: 0.925rem;
+  color: var(--km-text-primary);
+}
+
+.km-user-dropdown-header span {
+  font-size: 0.775rem;
+  color: var(--km-text-muted);
+}
+
+.km-user-dropdown-actions {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.km-user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--km-text-secondary);
+  border-radius: var(--km-radius-sm);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--km-transition-fast);
+}
+
+.km-user-menu-item:hover {
+  background: var(--km-surface-hover);
+  color: var(--km-text-primary);
+}
+
+.km-user-menu-item.km-logout-item:hover {
+  background: var(--km-danger-bg);
+  color: var(--km-danger);
+}
+
+.km-header-auth-links {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .km-mobile-menu-trigger {
+    display: flex;
+  }
+  .km-top-header {
+    padding: 0 1rem;
+  }
+  .km-header-weather-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .km-header-breadcrumb {
+    display: none;
+  }
+  .km-header-page-title {
+    font-size: 1rem;
+  }
+  .km-header-quick-action span {
+    display: none;
+  }
+}
+

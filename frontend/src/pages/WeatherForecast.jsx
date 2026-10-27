@@ -1,321 +1,425 @@
-// Weather forecast page
-import React, { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";  // 👈 FIX 2: Added missing Link import
-import { AuthContext } from "../context/AuthContext";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import WeatherCard from "../components/WeatherCard";
+import {
+  CloudSun,
+  Sun,
+  CloudRain,
+  Cloud,
+  Wind,
+  Droplets,
+  Thermometer,
+  Compass,
+  AlertTriangle,
+  CheckCircle2,
+  Calendar,
+  Search,
+  RotateCcw,
+  Sparkles,
+  Info,
+  ShieldCheck,
+  ChevronRight,
+  TrendingUp,
+} from "lucide-react";
+import {
+  getCurrentWeather,
+  getWeatherForecast,
+  getWeatherByCity,
+  getDailyAdvisory,
+} from "../api/weatherAPI";
 import "./WeatherForecast.css";
 
-// 👈 FIX 1: Fixed variable name (removed space)
-const API_BASE_URL = "http://localhost:8000/api";
-
 function WeatherForecast() {
-  const { user } = useContext(AuthContext);
-  
-  // State for weather data
   const [currentWeather, setCurrentWeather] = useState(null);
   const [forecast, setForecast] = useState([]);
   const [advisory, setAdvisory] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  // State for user input
-  const [location, setLocation] = useState("");
-  const [searchLocation, setSearchLocation] = useState("");
   const [forecastDays, setForecastDays] = useState(5);
+  const [locationInput, setLocationInput] = useState("");
+  const [activeLocation, setActiveLocation] = useState("Sample Farm, India");
 
-  // Fetch weather data on component mount
+  const agriHubs = ["Pune", "Nashik", "Punjab", "Delhi", "Bengaluru", "Indore"];
+
+  // Initial load
   useEffect(() => {
-    fetchWeatherData();
+    fetchFullWeatherData(activeLocation, forecastDays);
   }, []);
 
-  // Fetch weather data from backend
-  const fetchWeatherData = async (customLocation = "") => {
+  const fetchFullWeatherData = async (loc, days) => {
     setLoading(true);
-    setError(null);
-    
     try {
-      // Fetch current weather
-      const weatherUrl = customLocation 
-        ? `${API_BASE_URL}/weather/location/${encodeURIComponent(customLocation)}`
-        : `${API_BASE_URL}/weather/`;
-      
-      console.log("Fetching weather from:", weatherUrl); // For debugging
-      const weatherRes = await fetch(weatherUrl);
-      
-      if (!weatherRes.ok) {
-        const errorData = await weatherRes.json();
-        throw new Error(errorData.detail || "Failed to fetch weather data");
-      }
-      
-      const weatherData = await weatherRes.json();
-      setCurrentWeather(weatherData);
+      const [currRes, foreRes, advRes] = await Promise.allSettled([
+        loc === "Sample Farm, India" ? getCurrentWeather(loc) : getWeatherByCity(loc),
+        getWeatherForecast(days, loc),
+        getDailyAdvisory(),
+      ]);
 
-      // Fetch forecast
-      const forecastUrl = customLocation
-        ? `${API_BASE_URL}/weather/forecast?days=${forecastDays}&location=${encodeURIComponent(customLocation)}`
-        : `${API_BASE_URL}/weather/forecast?days=${forecastDays}`;
-      
-      const forecastRes = await fetch(forecastUrl);
-      if (!forecastRes.ok) throw new Error("Failed to fetch forecast");
-      
-      const forecastData = await forecastRes.json();
-      setForecast(forecastData.forecast || []);
-
-      // Fetch daily advisory (if logged in)
-      if (user) {
-        const advisoryRes = await fetch(`${API_BASE_URL}/weather/advisory/daily`);
-        if (advisoryRes.ok) {
-          const advisoryData = await advisoryRes.json();
-          setAdvisory(advisoryData);
+      if (currRes.status === "fulfilled") {
+        setCurrentWeather(currRes.value);
+        if (currRes.value?.location) {
+          setActiveLocation(currRes.value.location);
         }
       }
-
-      toast.success("Weather data updated successfully!");
-
+      if (foreRes.status === "fulfilled") {
+        setForecast(foreRes.value?.forecast || []);
+      }
+      if (advRes.status === "fulfilled") {
+        setAdvisory(advRes.value);
+      }
     } catch (err) {
-      setError(err.message);
-      toast.error("Failed to load weather data. Please try again.");
-      console.error("Weather fetch error:", err);
+      console.error("Weather fetch failed:", err);
+      toast.error("Could not fetch meteorological data.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle location search
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchLocation.trim()) {
-      setLocation(searchLocation);
-      fetchWeatherData(searchLocation);
-      toast.success(`Loading weather for ${searchLocation}...`);
-    }
+    if (!locationInput.trim()) return;
+    const target = locationInput.trim();
+    setActiveLocation(target);
+    fetchFullWeatherData(target, forecastDays);
+    toast.success(`Loading agromet data for ${target}`);
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
-    fetchWeatherData(location);
-    toast.success("Weather data refreshed!");
+  const handleHubClick = (city) => {
+    setLocationInput(city);
+    setActiveLocation(city);
+    fetchFullWeatherData(city, forecastDays);
   };
 
-  // 👈 FIX 3: Handle forecast days change
   const handleDaysChange = (days) => {
     setForecastDays(days);
-    // Small delay to ensure state updates before fetching
-    setTimeout(() => {
-      fetchWeatherData(location);
-    }, 100);
+    fetchFullWeatherData(activeLocation, days);
   };
 
-  // Get weather icon based on condition
-  const getWeatherIcon = (condition) => {
-    const icons = {
-      "Sunny": "☀️",
-      "Cloudy": "☁️",
-      "Partly Cloudy": "⛅",
-      "Rainy": "🌧️",
-      "Thunderstorm": "⛈️",
-      "Clear": "🌙",
-      "default": "🌤️"
-    };
-    return icons[condition] || icons.default;
+  // Weather Condition Icon selector
+  const renderWeatherIcon = (condition, size = 28) => {
+    const c = (condition || "").toLowerCase();
+    if (c.includes("rain")) return <CloudRain size={size} className="km-weather-icon-rain" />;
+    if (c.includes("cloud") && c.includes("part"))
+      return <CloudSun size={size} className="km-weather-icon-partly" />;
+    if (c.includes("cloud")) return <Cloud size={size} className="km-weather-icon-cloud" />;
+    return <Sun size={size} className="km-weather-icon-sun" />;
   };
-
-  if (loading && !currentWeather) {
-    return (
-      <div className="weather-loading">
-        <div className="spinner"></div>
-        <p>Fetching weather data...</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="weather-page">
-      
-      {/* Header Section */}
-      <div className="weather-header">
-        <h1>🌤️ Weather Forecast</h1>
-        <p>Get accurate weather updates tailored for your farm</p>
+    <div className="km-weather-page km-animate-fade-in">
+      {/* Header */}
+      <div className="km-page-header">
+        <div className="km-page-header-text">
+          <div className="km-badge km-badge-forest km-header-pill">
+            <Sparkles size={13} />
+            <span>Real-Time Agrometeorology Intelligence</span>
+          </div>
+          <h2>Micro-Climate Telemetry & Weather Forecast</h2>
+          <p>
+            Hyper-localized weather telemetry tailored for farm operations. Calculate
+            fungal infection risks, schedule irrigation cycles, and optimize pesticide
+            spray windows.
+          </p>
+        </div>
+
+        {/* Search & Location Bar */}
+        <form onSubmit={handleSearch} className="km-weather-search-form">
+          <div className="km-search-input-wrap">
+            <Search size={16} className="km-search-icon" />
+            <input
+              type="text"
+              placeholder="Search agricultural district (e.g. Pune, Nashik)"
+              value={locationInput}
+              onChange={(e) => setLocationInput(e.target.value)}
+              className="km-input km-weather-search-input"
+            />
+          </div>
+          <button type="submit" className="km-btn km-btn-emerald">
+            Locate
+          </button>
+          <button
+            type="button"
+            onClick={() => fetchFullWeatherData(activeLocation, forecastDays)}
+            className="km-btn km-btn-outline"
+            title="Refresh weather data"
+          >
+            <RotateCcw size={16} />
+          </button>
+        </form>
       </div>
 
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} className="weather-search">
-        <input
-          type="text"
-          placeholder="Enter your village/city name (e.g., Pune, Delhi)"
-          value={searchLocation}
-          onChange={(e) => setSearchLocation(e.target.value)}
-          className="search-input"
-        />
-        <button type="submit" className="btn btn-primary search-btn">
-          🔍 Search
-        </button>
-        <button type="button" className="btn btn-outline refresh-btn" onClick={handleRefresh}>
-          🔄 Refresh
-        </button>
-      </form>
-
-      {/* Error Display */}
-      {error && (
-        <div className="error-message">
-          <p>❌ {error}</p>
-          <button onClick={() => fetchWeatherData(location)} className="btn btn-outline">
-            Try Again
-          </button>
+      {/* Quick Agri-Hub Selector Chips */}
+      <div className="km-agri-hubs-bar">
+        <span className="km-hubs-label">Regional Mandi Hubs:</span>
+        <div className="km-hubs-chips">
+          {agriHubs.map((city) => (
+            <button
+              key={city}
+              type="button"
+              className={`km-hub-chip ${activeLocation.toLowerCase().includes(city.toLowerCase()) ? "active" : ""}`}
+              onClick={() => handleHubClick(city)}
+            >
+              {city}
+            </button>
+          ))}
         </div>
+      </div>
+
+      {/* ====================================================================
+          CURRENT CONDITIONS HERO CARD
+          ==================================================================== */}
+      {currentWeather && (
+        <section className="km-card km-current-weather-hero">
+          <div className="km-weather-hero-top">
+            <div className="km-hero-loc-info">
+              <span className="km-loc-caption">Station Location</span>
+              <h3>{currentWeather.location || activeLocation}</h3>
+              <span className="km-telemetry-timestamp mono-number">
+                Observed: {new Date(currentWeather.timestamp).toLocaleString()}
+              </span>
+            </div>
+
+            <div className="km-hero-temp-cluster">
+              <div className="km-hero-icon-box">
+                {renderWeatherIcon(currentWeather.condition, 48)}
+              </div>
+              <div className="km-hero-temps">
+                <span className="km-hero-deg mono-number">
+                  {currentWeather.temperature}°C
+                </span>
+                <span className="km-hero-condition-text">
+                  {currentWeather.condition}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Meteorological Metric Gauges */}
+          <div className="km-weather-metrics-grid">
+            <div className="km-weather-gauge-card">
+              <div className="km-gauge-header">
+                <Droplets size={16} className="text-info" />
+                <span>Relative Humidity</span>
+              </div>
+              <span className="km-gauge-val mono-number">{currentWeather.humidity}%</span>
+              <span className="km-gauge-sub">
+                {currentWeather.humidity > 75
+                  ? "Elevated &bull; Fungal Risk"
+                  : "Normal ambient moisture"}
+              </span>
+            </div>
+
+            <div className="km-weather-gauge-card">
+              <div className="km-gauge-header">
+                <CloudRain size={16} className="text-info" />
+                <span>Precipitation Prob.</span>
+              </div>
+              <span className="km-gauge-val mono-number">
+                {currentWeather.rain_chance || 0}%
+              </span>
+              <span className="km-gauge-sub">
+                {currentWeather.rainfall || 0} mm expected
+              </span>
+            </div>
+
+            <div className="km-weather-gauge-card">
+              <div className="km-gauge-header">
+                <Wind size={16} className="text-emerald" />
+                <span>Wind Velocity</span>
+              </div>
+              <span className="km-gauge-val mono-number">
+                {currentWeather.wind_speed} <small>km/h</small>
+              </span>
+              <span className="km-gauge-sub">
+                {currentWeather.wind_speed > 20
+                  ? "Breezy &bull; Halt spraying"
+                  : "Calm &bull; Safe for spraying"}
+              </span>
+            </div>
+
+            <div className="km-weather-gauge-card">
+              <div className="km-gauge-header">
+                <ShieldCheck size={16} className="text-emerald" />
+                <span>Field Safety Index</span>
+              </div>
+              <span className="km-gauge-val text-emerald">Optimal</span>
+              <span className="km-gauge-sub">Standard seasonal cycle</span>
+            </div>
+          </div>
+
+          {/* Real Backend Farming Advice Pill */}
+          {currentWeather.advice && (
+            <div className="km-hero-advice-alert">
+              <div className="km-hero-advice-icon">
+                <Info size={18} />
+              </div>
+              <div className="km-hero-advice-content">
+                <strong>Agronomic Telemetry Recommendation:</strong>
+                <p>{currentWeather.advice}</p>
+              </div>
+            </div>
+          )}
+        </section>
       )}
 
-      {/* Current Weather */}
-      {currentWeather && (
-        <div className="current-weather-card">
-          <div className="weather-location">
-            <h2>{currentWeather.location || "Current Location"}</h2>
-            <span className="weather-timestamp">
-              Last updated: {new Date(currentWeather.timestamp).toLocaleString()}
+      {/* ====================================================================
+          TODAY'S FARMING ADVISORY
+          ==================================================================== */}
+      {advisory && (
+        <section className="km-card km-weather-advisory-section">
+          <div className="km-section-heading-bar">
+            <div>
+              <h3>Daily Field Operations Advisory</h3>
+              <span className="km-sub-date">
+                Valid for {new Date(advisory.date).toLocaleDateString("en-IN", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
+            </div>
+            <span className="km-badge km-badge-forest">
+              Summary: {advisory.weather_summary}
             </span>
           </div>
 
-          <div className="weather-main">
-            <div className="weather-icon-large">
-              {getWeatherIcon(currentWeather.condition)}
-            </div>
-            <div className="weather-temp-large">
-              {currentWeather.temperature}°C
-            </div>
-            <div className="weather-condition">
-              {currentWeather.condition}
-            </div>
-          </div>
-
-          <div className="weather-details-grid">
-            <div className="weather-detail-item">
-              <span className="detail-label">💧 Humidity</span>
-              <span className="detail-value">{currentWeather.humidity}%</span>
-            </div>
-            <div className="weather-detail-item">
-              <span className="detail-label">🌧️ Rain Chance</span>
-              <span className="detail-value">{currentWeather.rain_chance || 0}%</span>
-            </div>
-            <div className="weather-detail-item">
-              <span className="detail-label">💨 Wind Speed</span>
-              <span className="detail-value">{currentWeather.wind_speed} km/h</span>
-            </div>
-            <div className="weather-detail-item">
-              <span className="detail-label">🌡️ Rainfall</span>
-              <span className="detail-value">{currentWeather.rainfall || 0} mm</span>
-            </div>
-          </div>
-
-          {currentWeather.advice && (
-            <div className="weather-advice">
-              <strong>🌱 Farming Advice:</strong>
-              <p>{currentWeather.advice}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Daily Advisory (for logged in users) */}
-      {advisory && user && (
-        <div className="advisory-card">
-          <h3>📋 Today's Farming Advisory</h3>
-          <p className="advisory-date">For {new Date(advisory.date).toLocaleDateString()}</p>
-          
-          <div className="advisory-content">
-            <div className="advisory-section">
-              <h4>✅ Recommended Tasks</h4>
-              <ul>
-                {advisory.farming_tasks?.map((task, index) => (
-                  <li key={index}>{task}</li>
+          <div className="km-advisory-dual-cards">
+            {/* Recommended Tasks */}
+            <div className="km-advisory-action-card">
+              <div className="km-advisory-card-title positive">
+                <CheckCircle2 size={18} />
+                <h4>Recommended Agronomic Tasks</h4>
+              </div>
+              <ul className="km-advisory-bullets">
+                {advisory.farming_tasks?.map((task, i) => (
+                  <li key={i}>{task}</li>
                 ))}
               </ul>
             </div>
-            
-            <div className="advisory-section">
-              <h4>⚠️ Cautions</h4>
-              <ul>
-                {advisory.cautions?.map((caution, index) => (
-                  <li key={index}>{caution}</li>
+
+            {/* Weather Cautions */}
+            <div className="km-advisory-action-card cautions">
+              <div className="km-advisory-card-title warning">
+                <AlertTriangle size={18} />
+                <h4>Field Alerts & Weather Cautions</h4>
+              </div>
+              <ul className="km-advisory-bullets caution">
+                {advisory.cautions?.map((caution, i) => (
+                  <li key={i}>{caution}</li>
                 ))}
               </ul>
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* 5-Day Forecast */}
-      {forecast.length > 0 && (
-        <div className="forecast-section">
-          <div className="forecast-header">
-            <h3>📅 {forecastDays}-Day Forecast</h3>
-            <div className="forecast-days-selector">
-              <button 
-                className={`days-btn ${forecastDays === 3 ? 'active' : ''}`}
-                onClick={() => handleDaysChange(3)}  // 👈 FIX 3: Using handler
-              >
-                3 Days
-              </button>
-              <button 
-                className={`days-btn ${forecastDays === 5 ? 'active' : ''}`}
-                onClick={() => handleDaysChange(5)}  // 👈 FIX 3: Using handler
-              >
-                5 Days
-              </button>
-              <button 
-                className={`days-btn ${forecastDays === 7 ? 'active' : ''}`}
-                onClick={() => handleDaysChange(7)}  // 👈 FIX 3: Using handler
-              >
-                7 Days
-              </button>
-            </div>
+      {/* ====================================================================
+          MULTI-DAY FORECAST GRID
+          ==================================================================== */}
+      <section className="km-card km-forecast-section">
+        <div className="km-forecast-header-row">
+          <div>
+            <h3>Multi-Day Micro-Climate Outlook</h3>
+            <p>Predictive day-by-day parameters for agricultural scheduling</p>
           </div>
 
-          <div className="forecast-grid">
-            {forecast.map((day, index) => (
-              <WeatherCard 
-                key={index}
-                day={day}
-                icon={getWeatherIcon(day.condition)}
-              />
+          <div className="km-forecast-day-pills">
+            {[3, 5, 7].map((days) => (
+              <button
+                key={days}
+                type="button"
+                className={`km-day-pill ${forecastDays === days ? "active" : ""}`}
+                onClick={() => handleDaysChange(days)}
+              >
+                {days} Days
+              </button>
             ))}
           </div>
         </div>
-      )}
 
-      {/* Farming Tips Section */}
-      <div className="farming-tips-section">
-        <h3>🌾 Weather-Based Farming Tips</h3>
-        <div className="tips-grid">
-          <div className="tip-card sunny">
-            <div className="tip-icon">☀️</div>
-            <h4>Sunny Day</h4>
-            <p>Good for harvesting, pesticide application, and drying crops</p>
+        <div className="km-forecast-cards-grid">
+          {forecast.map((day, idx) => (
+            <div key={idx} className="km-forecast-card km-card-interactive">
+              <div className="km-fcard-date">
+                <Calendar size={13} />
+                <span>
+                  {new Date(day.date).toLocaleDateString("en-IN", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
+              </div>
+
+              <div className="km-fcard-icon">
+                {renderWeatherIcon(day.condition, 32)}
+              </div>
+
+              <div className="km-fcard-temps">
+                <span className="km-fcard-max mono-number">{day.max_temp}°</span>
+                <span className="km-fcard-min mono-number">{day.min_temp}°</span>
+              </div>
+
+              <span className="km-fcard-condition">{day.condition}</span>
+
+              <div className="km-fcard-details">
+                <div className="km-fcard-detail-item">
+                  <Droplets size={12} />
+                  <span>{day.humidity}%</span>
+                </div>
+                <div className="km-fcard-detail-item">
+                  <CloudRain size={12} />
+                  <span>{day.rain_chance}%</span>
+                </div>
+                <div className="km-fcard-detail-item">
+                  <Wind size={12} />
+                  <span>{day.wind_speed}km/h</span>
+                </div>
+              </div>
+
+              {day.advice && (
+                <div className="km-fcard-advice" title={day.advice}>
+                  <p>{day.advice}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Weather Operations Guide */}
+      <section className="km-card km-agri-guide-card">
+        <h3>Weather-Driven Farm Protocol Matrix</h3>
+        <div className="km-guide-grid">
+          <div className="km-guide-item">
+            <Sun size={20} className="text-warning" />
+            <div>
+              <strong>Solar Peak (Sunny &gt; 32°C)</strong>
+              <p>Ideal for harvesting and drying grains. Irrigate early morning or evening to avoid root shock.</p>
+            </div>
           </div>
-          <div className="tip-card rainy">
-            <div className="tip-icon">🌧️</div>
-            <h4>Rainy Day</h4>
-            <p>Check drainage, avoid walking in fields, watch for fungal diseases</p>
+          <div className="km-guide-item">
+            <CloudRain size={20} className="text-info" />
+            <div>
+              <strong>Precipitation Window</strong>
+              <p>Ensure field drainage furrows are cleared. Do not apply foliar sprays or nitrogen top-dressing.</p>
+            </div>
           </div>
-          <div className="tip-card cloudy">
-            <div className="tip-icon">☁️</div>
-            <h4>Cloudy Day</h4>
-            <p>Good for transplanting, apply organic mulch, inspect for pests</p>
+          <div className="km-guide-item">
+            <Droplets size={20} className="text-info" />
+            <div>
+              <strong>High Humidity (&gt; 80%)</strong>
+              <p>Critical threshold for fungal blight. Inspect potato and tomato crops for dark sporulation spots.</p>
+            </div>
           </div>
-          <div className="tip-card windy">
-            <div className="tip-icon">💨</div>
-            <h4>Windy Day</h4>
-            <p>Avoid spraying pesticides, check for wind damage, secure stakes</p>
+          <div className="km-guide-item">
+            <Wind size={20} className="text-emerald" />
+            <div>
+              <strong>High Wind (&gt; 20 km/h)</strong>
+              <p>Halt high-pressure spraying to prevent chemical drift. Stake tall crops like tomato and banana.</p>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Login Prompt for Non-Logged In Users */}
-      {!user && (
-        <div className="login-prompt">
-          <p>🔒 <Link to="/login">Login</Link> to get personalized daily farming advisories!</p>
-        </div>
-      )}
+      </section>
     </div>
   );
 }
